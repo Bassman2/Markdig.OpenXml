@@ -23,10 +23,8 @@ namespace Markdig.OpenXml.Renderer
 
                 Debug.Unindent();
                 Debug.WriteLine("--ListBlock.Item");
-
             }
 
-            
             Debug.Unindent();
             Debug.WriteLine("--ListBlock");
         }

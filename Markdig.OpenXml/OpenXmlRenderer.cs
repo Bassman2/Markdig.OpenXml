@@ -1,4 +1,5 @@
 ﻿using DocumentFormat.OpenXml;
+//using DocumentFormat.OpenXml.Drawing.Charts;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Vml;
 using DocumentFormat.OpenXml.Wordprocessing;
@@ -6,6 +7,7 @@ using Markdig.OpenXml.Renderer;
 using Markdig.OpenXml.Renderer.Inlines;
 using Markdig.Renderers;
 using Markdig.Syntax;
+using System.Xml.Linq;
 
 
 namespace Markdig.OpenXml
@@ -25,7 +27,7 @@ namespace Markdig.OpenXml
         private OpenXmlFormat format;
         private OpenXmlCompositeElement parent;
         private Paragraph paragraph;
-        private OpenXmlStyle style;
+        //private OpenXmlStyle style;
         //private Run run;
 
         public OpenXmlRenderer()
@@ -52,14 +54,14 @@ namespace Markdig.OpenXml
 
         public void Render(OpenXmlCompositeElement parent, MarkdownObject markdownObject, OpenXmlFormat format = null)
         {
-            this.format = format ?? new OpenXmlFormat();
+            this.format = format ?? OpenXmlFormat.Inline;
             this.parent = parent;
             Render(markdownObject);
         }
 
         public void Render(string file, MarkdownObject markdownObject, OpenXmlFormat format = null)
         {
-            this.format = format ?? new OpenXmlFormat();
+            this.format = format ?? OpenXmlFormat.Document;
             using (WordprocessingDocument wordDocument = WordprocessingDocument.Create(file, WordprocessingDocumentType.Document))
             {
                 // Add a main document part. 
@@ -104,65 +106,54 @@ namespace Markdig.OpenXml
                 )
             ));
 
-            styles.AddStyle("Standard", true, StyleValues.Character, "Normal");
+            styles.AddParagraphStyle("Normal",               true, false, "Normal", true);
+            styles.AddCharacterStyle("DefaultParagraphFont", true, false, "Default Paragraph Font", 1, true, true);
+            styles.AddTableStyle    ("TableNormal",          true, false, "Normal Table", 99, true, true, 0, 0, 180, 0, 108);
+            styles.AddNumberingStyle("NoList",               true, false, "Normal", 99, true, true);
 
-            /*
-            styles.Append(new Style(
-                new StyleName() { Val = "Normal" },
-                new PrimaryStyle()
-                )
-            { StyleId = "Standard", Default = true, Type = StyleValues.Paragraph });
+            //styles.AddParagraphStyle("Heading1", false, false, "heading 1", "Normal", "Normal", "Heading1Char", 9, false, false, "2F5496", 32);
+            //styles.AddParagraphStyle("Heading2", false, false, "heading 2", "Normal", "Normal", "Heading2Char", 9, true, true, "2F5496", 26);
+            //styles.AddParagraphStyle("Heading3", false, false, "heading 3", "Normal", "Normal", "Heading3Char", 9, true, true, "2F5496", 24);
+            //styles.AddParagraphStyle("Heading4", false, false, "heading 4", "Normal", "Normal", "Heading4Char", 9, true, true, "2F5496", 22);
+            //styles.AddParagraphStyle("Heading5", false, false, "heading 5", "Normal", "Normal", "Heading5Char", 9, true, true, "2F5496", 22);
+            //styles.AddParagraphStyle("Heading6", false, false, "heading 6", "Normal", "Normal", "Heading6Char", 9, true, true, "2F5496", 22);
 
-            styles.Append(new Style(
-                new StyleName() { Val = "Default Paragraph Font" },
-                new UIPriority() { Val = 1 },
-                new SemiHidden(),
-                new UnhideWhenUsed()
-                )
-            { StyleId = "Absatz-Standardschriftart", Default = true, Type = StyleValues.Character });
+            //styles.AddCharacterStyle("Heading1Char", false, true, "Heading 1 Char", "DefaultParagraphFont", "Heading1", 9, "2F5496", 32);
+            //styles.AddCharacterStyle("Heading2Char", false, true, "Heading 2 Char", "DefaultParagraphFont", "Heading2", 9, "2F5496", 26);
+            //styles.AddCharacterStyle("Heading3Char", false, true, "Heading 3 Char", "DefaultParagraphFont", "Heading3", 9, "2F5496", 24);
+            //styles.AddCharacterStyle("Heading4Char", false, true, "Heading 4 Char", "DefaultParagraphFont", "Heading4", 9, "2F5496", 22);
+            //styles.AddCharacterStyle("Heading5Char", false, true, "Heading 5 Char", "DefaultParagraphFont", "Heading5", 9, "2F5496", 22);
+            //styles.AddCharacterStyle("Heading6Char", false, true, "Heading 6 Char", "DefaultParagraphFont", "Heading6", 9, "2F5496", 22);
 
-            // Normal Table
-            styles.Append(new Style(
-                new StyleName() { Val = "Normal Table" },
-                new UIPriority() { Val = 99 },
-                new SemiHidden(),
-                new UnhideWhenUsed(),
-                new StyleTableProperties(
-                    new TableIndentation() { Width = 0, Type = TableWidthUnitValues.Dxa },
-                    new TableCellMarginDefault(
-                        new TopMargin() { Width = "0", Type = TableWidthUnitValues.Dxa },
-                        new TableCellLeftMargin() { Width = 108, Type = TableWidthValues.Dxa },
-                        new BottomMargin() { Width = "0", Type = TableWidthUnitValues.Dxa },
-                        new TableCellRightMargin() { Width = 108, Type = TableWidthValues.Dxa }
-                        )
-                    )
-                )
-            { StyleId = "NormaleTabelle", Default = true, Type = StyleValues.Table });
+            styles.AddParagraphStyle(this.format.Header1Style);
+            styles.AddParagraphStyle(this.format.Header2Style);
+            styles.AddParagraphStyle(this.format.Header3Style);
+            styles.AddParagraphStyle(this.format.Header4Style);
+            styles.AddParagraphStyle(this.format.Header5Style);
+            styles.AddParagraphStyle(this.format.Header6Style);
 
-            // No List
-            styles.Append(new Style(
-                new StyleName() { Val = "No List" },
-                new UIPriority() { Val = 99 },
-                new SemiHidden(),
-                new UnhideWhenUsed()
-                )
-            { StyleId = "KeineListe", Default = true, Type = StyleValues.Numbering });
+            styles.AddCharacterStyle(this.format.Header1Style);
+            styles.AddCharacterStyle(this.format.Header2Style);
+            styles.AddCharacterStyle(this.format.Header3Style);
+            styles.AddCharacterStyle(this.format.Header4Style);
+            styles.AddCharacterStyle(this.format.Header5Style);
+            styles.AddCharacterStyle(this.format.Header6Style);
 
-            // No List
+            //
+            // ListParagraph
+            //
             styles.Append(new Style(
                 new StyleName() { Val = "List Paragraph" },
-                new BasedOn() { Val = "Standard" },
+                new BasedOn() { Val = "Normal" },
                 new UIPriority() { Val = 34 },
                 new PrimaryStyle(),
-                new Rsid() { Val = "00381776" },
+                new Rsid() { Val = "009951DC" },      // ?????????????????
                 new StyleParagraphProperties(
                     new Indentation() { Left = "720" },
                     new ContextualSpacing()
-                    ) 
-                )
-            { StyleId = "Listenabsatz", Type = StyleValues.Paragraph });
-
-            */
+                ))
+                { Type = StyleValues.Paragraph, StyleId = "ListParagraph" }
+            );
         }
 
         private void SetNumberingDefinitions(MainDocumentPart mainPart)
@@ -200,14 +191,27 @@ namespace Markdig.OpenXml
 
         public void AddParagraph()
         {
-            this.style = this.format.TextStyle;
-            this.paragraph = this.parent.AppendChild(new Paragraph());
+            //this.style = this.format.TextStyle;
+            this.paragraph = this.parent.AppendChild(new Paragraph(this.format.TextStyle.ParagraphProperties));
+        }
+
+        public void AddListItem(int level, int id)
+        {
+            this.paragraph = this.parent.AppendChild(
+                new Paragraph(
+                    new ParagraphProperties(
+                        new ParagraphStyleId() { Val = "ListParagraph" },
+                        new NumberingProperties(
+                            new NumberingLevelReference() { Val = level },
+                            new NumberingId() { Val = id }
+                        ))));
+
         }
 
         public void AddHeading(int level)
         {
-            this.style = this.format.HeaderStyles[level];
-            this.paragraph = this.parent.AppendChild(new Paragraph());
+            //this.style = this.format.HeaderStyles[level];
+            this.paragraph = this.parent.AppendChild(new Paragraph(this.format.HeaderStyles[level].ParagraphProperties));
         }
 
         public void AddList(char bulletType, bool isOrdered, int indent)
@@ -237,16 +241,16 @@ namespace Markdig.OpenXml
         //    this.paragraph = this.parent.AppendChild(new Paragraph());
         //}
 
-        public Run AddRun(OpenXmlStyle style)
-        {
-            Run run = this.paragraph.AppendChild(new Run());
-            RunProperties runProperties = run.AppendChild(style.RunProperties);
-            return run;
-        }
+        //public Run AddRun(OpenXmlStyle style)
+        //{
+        //    Run run = this.paragraph.AppendChild(new Run());
+        //    //RunProperties runProperties = run.AppendChild(style.RunProperties);
+        //    return run;
+        //}
 
         public void AddText(string text)
         {
-            Run run = AddRun(this.style);
+            Run run = this.paragraph.AppendChild(new Run());
             run.AppendChild(new Text() { Text = text });
         }
 
